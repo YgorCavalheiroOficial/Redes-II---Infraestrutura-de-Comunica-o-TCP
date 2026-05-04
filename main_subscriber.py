@@ -2,15 +2,19 @@ from cliente.aplicacao_cliente import Cliente
 import time
 
 if __name__ == "__main__":
-    # Instancia um cliente e conecta ao Broker
-    inscrito = Cliente(broker_host='127.0.0.1', broker_port=5000)
+    inscrito = Cliente(broker_host='127.0.0.1', broker_port=1024)
     inscrito.conectar()
     
-    # Informa ao Broker que quer receber mensagens do Tópico A
-    inscrito.inscrever("Topico A")
+    print("\n" + "="*30)
+    print("MODO ASSINANTE INICIADO")
+    print("="*30)
     
-    print("Inscrito no 'Topico A'. Aguardando mensagens...")
-    
-    # Mantém o script rodando para a thread de escuta continuar ativa
     while True:
-        time.sleep(1)
+        topico = input("\nDigite o TÓPICO que deseja se inscrever (ou 'sair' para fechar): ")
+        
+        if topico.strip().lower() == 'sair':
+            print("Encerrando assinante...")
+            break
+            
+        inscrito.inscrever(topico)
+        print(f"✅ Inscrição enviada! Agora você receberá mensagens do tópico '{topico}'.")

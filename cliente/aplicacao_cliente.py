@@ -5,25 +5,22 @@ from utils.crypto_utils import CryptoUtils
 from cryptography.fernet import Fernet
 
 class Cliente:
-    def __init__(self, broker_host='127.0.0.1', broker_port=5000):
+    def __init__(self, broker_host='127.0.0.1', broker_port=1024):
         self.broker_host = broker_host
         self.broker_port = broker_port
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
 
         # Geração das chaves do cliente: pré estruturado para a implementação da criptografia para as próximas entregas
-        self.chave_privada, self.chave_publica = CryptoUtils.gerar_par_chaves()
-        self.chave_simetrica_envelopamento = CryptoUtils.gerar_chave_simetrica()
+        #self.chave_privada, self.chave_publica = CryptoUtils.gerar_par_chaves()
+        #self.chave_simetrica_envelopamento = CryptoUtils.gerar_chave_simetrica()
         # Chave para Criptografia Ponta a Ponta Compartilhada apenas entre clientes previamente
-        self.chave_e2e = Fernet(Fernet.generate_key()) 
+        #self.chave_e2e = Fernet(Fernet.generate_key()) 
 
     def conectar(self):
         #Conexão TCP Básica
         self.socket.connect((self.broker_host, self.broker_port))
-        #Envio da saudação com o limitador
-        self.socket.send("HELLO_BROKER\n".encode())
-        resposta = self.socket.recv(1024).decode()
-        print(f"Conectado! Resposta do Servidor: {resposta.strip()}")
+        
+        print(f"Conectado!")
         
         # Passo 2 & 3: Local destinado para realizar a troca da chave_simetrica_envelopamento para as próximas entregas
         # cifrada com a chave pública do Broker (Envelopamento Digital) e o envio do certificado assinado pelo Broker para autenticação.
@@ -42,19 +39,18 @@ class Cliente:
         # Cifra o payload antes de colocar no pacote do Broker
         #payload_cifrado = self.chave_e2e.encrypt(mensagem_clara.encode()).decode()
         
-        pacote = json.dumps({
-            'acao': 'PUBLISH', 
-            'topico': topico, 
-            'payload': mensagem_clara
-        }) + "\n"
+        pacote = json.dumps({'acao': 'PUBLISH', 'topico': topico, 'payload': mensagem_clara}) + "\n"
+        
         self.socket.send(pacote.encode())
+        print ("*pacote enviado*")
 
     def escutar(self):
-        buffer = "" #Pesquisar o motivo lógico pelo qual o buffer deve ser inicializado vazio
+        buffer = "" 
         while True:
             try:
                 data = self.socket.recv(2048)
                 if not data:
+                    print("Data vazio, mensagem não recebida")
                     print("Conexão com o Broker foi encerrada.")
                     break
                 

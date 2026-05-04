@@ -3,12 +3,22 @@ import time
 
 if __name__ == "__main__":
     # Instancia outro cliente e conecta ao Broker
-    publicador = Cliente(broker_host='127.0.0.1', broker_port=5000)
+    publicador = Cliente(broker_host='127.0.0.1', broker_port=1024)
     publicador.conectar()
     
-    # Publica uma mensagem no mesmo tópico
-    print("Enviando mensagem secreta para o 'Topico A'...")
-    publicador.publicar("Topico A", "Olá! Esta é uma mensagem confidencial ponta a ponta.")
+    print("\n" + "="*30)
+    print("MODO PUBLICADOR INICIADO")
+    print("="*30)
     
-    # Aguarda um pouco antes de encerrar
-    time.sleep(2)
+    while True:
+        topico = input("\nDigite o TÓPICO que deseja publicar (ou 'sair' para fechar): ")
+        
+        if topico.strip().lower() == 'sair':
+            print("Encerrando publicador...")
+            break
+        mensagem = input(f"Digite a MENSAGEM para o tópico '{topico}': ")
+        
+        publicador.publicar(topico, mensagem)
+        print("✅ Mensagem enviada para o Broker!")
+        
+        time.sleep(0.5)
