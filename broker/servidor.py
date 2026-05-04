@@ -4,7 +4,7 @@ import threading
 from utils.crypto_utils import CryptoUtils
 
 class Broker:
-    def __init__(self, host='127.0.0.1', port=5000):
+    def __init__(self, host='127.0.0.1', port=1024):
         self.host = host
         self.port = port
         
@@ -24,7 +24,6 @@ class Broker:
         
         while True:
             conn, addr = self.server_socket.accept()
-            # Inicia uma thread para cada cliente conectado
             thread = threading.Thread(target=self.handle_client, args=(conn, addr))
             thread.start()
 
@@ -33,33 +32,27 @@ class Broker:
         buffer = ""
         
         try:
-            # Passo 1: Apresentação do cliente
-            msg_inicial = conn.recv(1024).decode()
-            if msg_inicial == "HELLO_BROKER":
-                conn.send("HELLO_CLIENT".encode())
-
-            # Passo 2 & 3: Handshake, Envelopamento e Autenticação para a próxima entrega
-            # print(f"Realizando Handshake e validando assinaturas com {addr}...")
-            
-            # Loop principal para ler as mensagens
-            while True:
+            while True: 
                 data = conn.recv(2048)
-                if not data:
-                    break # Ocorre quando o cliente desconecta.
-                
-                # TCP Stream: junta os pedaços e separa por quebra de linha
+                if not data: 
+                    print(f"Conexão encerrada pelo cliente {addr}")
+                    break
+                    
                 buffer += data.decode()
-                mensagens = buffer.splint('\n')
-
-                # O último elemento é sempre vazio ou incompleto, volta pro buffer
+                mensagens = buffer.split('\n')
                 buffer = mensagens.pop()
                 
                 for msg_str in mensagens:
-                    if not msg_str.strip(): continue
-
-                    comando = json.loads(msg_str)
+                    if not msg_str.strip(): 
+                        continue
                     
-                    # Passo 4: Lógica de Tópicos
+                    # Tenta ler o JSON. Se der erro, ignora a sujeira e continua vivo
+                    try:
+                        comando = json.loads(msg_str)
+                    except json.JSONDecodeError:
+                        print(f"Ignorando lixo não-JSON recebido de {addr}: {msg_str}")
+                        continue
+                    
                     if comando['acao'] == 'SUBSCRIBE':
                         topico = comando['topico']
                         if topico not in self.topicos:
@@ -67,34 +60,43 @@ class Broker:
                         self.topicos[topico].append(conn)
                         print(f"Cliente {addr} inscrito no {topico}")
                         
-                    # Passo 5: Confidencialidade Ponta a Ponta
                     elif comando['acao'] == 'PUBLISH':
                         topico = comando['topico']
                         payload = comando['payload']
-                        # O Broker apenas repassa o payload, não consegue ler o conteúdo
-                        print(f"Repassando pacote cifrado ponta a ponta no '{topico}': {payload}...")
+                        print(f"Mensagem recebida no tópico '{topico}': {payload}")
                         self.notificar_inscritos(topico, payload, remetente=conn)
 
         except Exception as e:
             print(f"Erro na conexão com {addr}: {e}")
         finally:
-            # Limpeza caso o cliente desconecte
+            # Limpeza
             for topico, clientes in self.topicos.items():
                 if conn in clientes:
                     clientes.remove(conn)
             conn.close()
 
     def notificar_inscritos(self, topico, payload, remetente):
+        print(f"\n[DEBUG] Iniciando notificação para o tópico: '{topico}'")
+        print(f"[DEBUG] Tópicos que existem na memória agora: {list(self.topicos.keys())}")
+        
         if topico in self.topicos:
-            mensagem = json.dumps({
+            print(f"[DEBUG] Tópico '{topico}' encontrado! Total de inscritos: {len(self.topicos[topico])}")
+            mensagem = (json.dumps({
                 'acao': 'RECEIVE',
                 'topico': topico,
                 'payload': payload
-            }) +"\n".encode()
+            }) + "\n").encode()
             
             for cliente in self.topicos[topico]:
-                if cliente != remetente: # Não envia de volta para quem publicou
+                print(f"[DEBUG] Analisando cliente...")
+                if cliente != remetente:
                     try:
                         cliente.send(mensagem)
-                    except:
+                        print("[DEBUG] -> Mensagem ENVIADA com sucesso ao Subscriber!")
+                    except Exception as e:
+                        print(f"[DEBUG] -> FALHA ao enviar para Subscriber: {e}")
                         self.topicos[topico].remove(cliente)
+                else:
+                    print("[DEBUG] -> Este cliente é o Publisher (remetente). A regra impede de devolver a mensagem para ele mesmo.")
+        else:
+            print(f"[DEBUG] O tópico '{topico}' não tem ninguém inscrito. Mensagem descartada.")
