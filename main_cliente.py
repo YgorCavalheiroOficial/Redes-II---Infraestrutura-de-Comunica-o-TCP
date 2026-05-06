@@ -15,9 +15,18 @@ if __name__ == "__main__":
     print("="*30)
     
     while True:
-        modo = input("\nO que deseja fazer? (PUB / SUB / SAIR): ").strip().lower()
+        modo = input("\nO que deseja fazer? (PUB / SUB / UNSUB / SAIR): ").strip().lower()
 
-        if modo == 'sub':
+        if modo == 'unsub':
+            if not cliente.topicos_inscritos:
+                print("❌ Você não está inscrito em nenhum tópico no momento.")
+                continue
+                
+            print(f"Tópicos atuais: {list(cliente.topicos_inscritos)}")
+            topico = input("Digite o TÓPICO que deseja cancelar a inscrição: ").strip()
+            cliente.desinscrever(topico)
+
+        elif modo == 'sub':
             topico = input("\nDigite o TÓPICO que deseja se inscrever: ").strip()
             if topico.lower() == 'sair':
                 break
@@ -52,4 +61,4 @@ if __name__ == "__main__":
             break
 
         else:
-            print("❌ Opção inválida. Por favor, digite PUB, SUB ou SAIR.")
+            print("❌ Opção inválida. Por favor, digite PUB, SUB, UNSUB ou SAIR.")

@@ -65,6 +65,18 @@ class Broker:
                         payload = comando['payload']
                         print(f"Mensagem recebida no tópico '{topico}': {payload}")
                         self.notificar_inscritos(topico, payload, remetente=conn)
+                    
+                    elif comando['acao'] == 'UNSUBSCRIBE':
+                        topico = comando['topico']
+                        if topico in self.topicos and conn in self.topicos[topico]:
+                            self.topicos[topico].remove(conn)
+                            print(f"[UNSUB] Cliente {addr} removido do tópico: {topico}")
+                            
+                            # Limpeza opcional: se o tópico ficou vazio, removemos o tópico da memória
+                            if not self.topicos[topico]:
+                                del self.topicos[topico]
+                        else:
+                            print(f"[UNSUB] Cliente {addr} tentou sair de {topico}, mas não estava inscrito.")
 
         except Exception as e:
             print(f"Erro na conexão com {addr}: {e}")

@@ -41,6 +41,22 @@ class Cliente:
 
         print(f"Inscrito em: {self.topicos_inscritos}")
 
+    def desinscrever(self, topico):
+        if topico in self.topicos_inscritos:
+    
+            self.topicos_inscritos.remove(topico)
+            
+            # 2. Prepara o pacote para o Broker
+            pacote = json.dumps({
+                'acao': 'UNSUBSCRIBE',
+                'topico': topico
+            }) + "\n"
+            
+            self.socket.send(pacote.encode())
+            print(f"Desinscrição do tópico '{topico}' enviada ao servidor.")
+        else:
+            print(f"⚠️ Você não está inscrito no tópico '{topico}'.")
+
     def publicar(self, topico, mensagem_clara):
         # Passo 5: Futuramente será implementada a Confidencialidade Ponta a Ponta
         # Cifra o payload antes de colocar no pacote do Broker
