@@ -16,6 +16,9 @@ class Cliente:
         # Chave para Criptografia Ponta a Ponta Compartilhada apenas entre clientes previamente
         #self.chave_e2e = Fernet(Fernet.generate_key()) 
 
+        # Lista de tópicos que este cliente assinou
+        self.topicos_inscritos = set()
+
     def conectar(self):
         #Conexão TCP Básica
         self.socket.connect((self.broker_host, self.broker_port))
@@ -29,10 +32,14 @@ class Cliente:
         threading.Thread(target=self.escutar, daemon=True).start()
 
     def inscrever(self, topico):
+        self.topicos_inscritos.add(topico)
+
         #Solicitação de entrada em um tópico
         pacote = json.dumps({'acao': 'SUBSCRIBE', 'topico': topico}) + "\n"
         # Futuramente esta mensagem será cifrada com a chave simétrica do envelopamento antes do envio
         self.socket.send(pacote.encode())
+
+        print(f"Inscrito em: {self.topicos_inscritos}")
 
     def publicar(self, topico, mensagem_clara):
         # Passo 5: Futuramente será implementada a Confidencialidade Ponta a Ponta

@@ -24,10 +24,22 @@ if __name__ == "__main__":
 
             cliente.inscrever(topico)
             print(f"✅ Inscrição enviada! Agora você receberá mensagens do tópico '{topico}'.")
+            print(f"\nTópicos atuais: {list(cliente.topicos_inscritos)}.")
 
         elif modo == 'pub':
+            if not cliente.topicos_inscritos:
+                print("\n" + "!"*45)
+                print("❌ ACESSO NEGADO: Você não pode publicar.")
+                print("Você deve estar inscrito em ao menos UM tópico.")
+                print("!"*45)
+                continue
+
             topico = input("\nDigite o TÓPICO que deseja publicar: ").strip()
         
+            if topico not in cliente.topicos_inscritos:
+                print("❌ ACESSO NEGADO: Você não pode publicar em um tópico que não está inscrito.")
+                continue
+
             mensagem = input(f"Digite a MENSAGEM para o tópico '{topico}': ").strip()
         
             cliente.publicar(topico, mensagem)
@@ -36,7 +48,7 @@ if __name__ == "__main__":
             time.sleep(0.5)
 
         elif modo == 'sair':
-            print("Encerrando publicador...")
+            print("Encerrando o Client...")
             break
 
         else:
